@@ -20,3 +20,6 @@ watermarked/
 
 # Backups
 backups/
+
+# Gemini CLI internal directory (do not commit)
+.gemini/
