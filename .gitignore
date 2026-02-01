@@ -1,0 +1,22 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Editor/IDE
+.idea/
+.vscode/
+
+# Logs
+logs/
+
+# Watermarked workflows
+watermarked/
+
+# Backups
+backups/
