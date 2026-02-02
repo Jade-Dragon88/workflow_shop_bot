@@ -22,4 +22,4 @@ watermarked/
 backups/
 
 # Gemini CLI internal directory (do not commit)
-.gemini/
+.gemini/Gemini.md
