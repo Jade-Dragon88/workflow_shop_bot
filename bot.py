@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 
 from config import BOT_TOKEN, LOGS_DIR
-from handlers import start as start_handler
+from handlers import start as start_handler, catalog as catalog_handler
 from utils.logger import setup_logger
 
 async def main():
@@ -20,6 +20,7 @@ async def main():
     # --- Register Handlers ---
     # We will register handlers from different modules here
     dp.include_router(start_handler.router)
+    dp.include_router(catalog_handler.router)
     
     # Start polling
     # Before starting, we drop all pending updates to avoid processing old messages

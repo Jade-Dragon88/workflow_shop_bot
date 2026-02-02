@@ -23,3 +23,7 @@ backups/
 
 # Gemini CLI internal directory (do not commit)
 .gemini/Gemini.md
+
+# Project data and scripts
+workflows/
+scripts/
