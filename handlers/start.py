@@ -1,6 +1,7 @@
 from aiogram import Router, Bot, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, Command
+from html import escape # Using Python's standard library for HTML escaping
 import logging
 
 from keyboards.inline import get_main_menu_keyboard
@@ -16,24 +17,25 @@ async def handle_start(message: Message, bot: Bot):
     Handler for the /start command.
     Greets the user, registers them in the database, and shows the main menu.
     """
-    user_id = message.from_user.id
-    username = message.from_user.username
+    user = message.from_user
+    user_id = user.id
+    username = user.username
+    # Escape the user's first name to prevent HTML injection issues
+    first_name = escape(user.first_name)
     
     # --- Register user in the database ---
     try:
-        # Check if user already exists using our new HTTP client
         existing_users = await supabase_http_client.select(
             table="users",
             params={"telegram_id": f"eq.{user_id}", "select": "telegram_id"}
         )
         
         if not existing_users:
-            # User does not exist, insert them
             logging.info(f"New user: {username} ({user_id}). Registering...")
             user_data = {
                 'telegram_id': user_id,
                 'username': username,
-                'registered_at': User().registered_at.isoformat(),
+                'registered_at': User(telegram_id=user_id).registered_at.isoformat(),
             }
             await supabase_http_client.insert(table="users", data=user_data)
             logging.info(f"User {username} ({user_id}) registered successfully.")
@@ -43,11 +45,11 @@ async def handle_start(message: Message, bot: Bot):
     except Exception as e:
         logging.error(f"Error during user registration for {username} ({user_id}): {e}", exc_info=True)
 
-    # Send welcome message
+    # Send welcome message (without bold tags for now)
     welcome_text = (
-        "<b>Welcome to the n8n Workflows Shop!</b>\n\n"
-        "Here you can find ready-made solutions for server monitoring and automation.\n\n"
-        "Select an option from the menu below to get started:"
+        f"👋 Привет, {first_name}!\n\n"
+        "Здесь вы можете найти готовые решения для мониторинга и автоматизации серверов.\n\n"
+        "Выберите опцию в меню ниже, чтобы начать:"
     )
     
     await message.answer(
@@ -63,13 +65,13 @@ async def handle_help(message: Message):
     Provides helpful information to the user.
     """
     help_text = (
-        "<b>Bot Help & Information</b>\n\n"
-        "This bot allows you to purchase n8n workflows for server monitoring.\n\n"
-        "<b>Available Commands:</b>\n"
-        "/start - Show the main menu\n"
-        "/catalog - View the list of available workflows\n"
-        "/help - Show this help message\n\n"
-        "For support, please use the /support command or contact the administrator."
+        "<b>ℹ️ Помощь и информация</b>\n\n"
+        "Этот бот позволяет вам приобретать готовые n8n workflows для мониторинга серверов.\n\n"
+        "<b>Доступные команды:</b>\n"
+        "/start - Показать главное меню\n"
+        "/catalog - Посмотреть каталог workflows\n"
+        "/help - Показать это сообщение\n\n"
+        "Для поддержки, пожалуйста, используйте команду /support или свяжитесь с администратором."
     )
     await message.answer(text=help_text)
 
@@ -79,7 +81,7 @@ async def back_to_main_menu(callback: CallbackQuery):
     """
     Handles the 'main_menu' callback, returning the user to the main menu.
     """
-    menu_text = "You are back in the main menu. What would you like to do?"
+    menu_text = "Вы вернулись в главное меню. Что бы вы хотели сделать?"
     await callback.message.edit_text(
         text=menu_text,
         reply_markup=get_main_menu_keyboard()
