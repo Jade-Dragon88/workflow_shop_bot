@@ -37,8 +37,10 @@ def get_main_catalog_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="❗️ Крайне важные", callback_data="filter_priority:1")
     ])
     buttons.append([
-        InlineKeyboardButton(text="👍 Рекомендуемые", callback_data="filter_priority:2"),
-        InlineKeyboardButton(text="ℹ️ Общая информация", callback_data="filter_priority:3"),
+        InlineKeyboardButton(text="👍 Рекомендуемые", callback_data="filter_priority:2")
+    ])
+    buttons.append([
+        InlineKeyboardButton(text="ℹ️ Общая информация", callback_data="filter_priority:3")
     ])
     buttons.append([
         InlineKeyboardButton(text="🗂️ Все Workflows", callback_data="filter_priority:all")
