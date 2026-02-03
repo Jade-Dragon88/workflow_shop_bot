@@ -42,21 +42,17 @@ async def get_workflow_by_slug(slug: str) -> Workflow | None:
 @router.callback_query(F.data == "catalog_menu")
 async def show_catalog_menu(callback: CallbackQuery, **kwargs):
     """
-    Shows the main catalog view with filter buttons.
+    Shows the main catalog view with filter buttons (categories).
     """
     await callback.answer()
     
-    workflows = await get_workflows_from_db()
-    
-    catalog_text = "🗂️ **Каталог Workflows**\n\nВыберите категорию или workflow:"
-    if not workflows:
-        catalog_text = "Каталог пока пуст. Скоро здесь появятся новые workflows!"
+    catalog_text = "🗂️ **Каталог Workflows**\n\nВыберите категорию:"
 
     try:
-        # Use the keyboard with filters here
+        # Use the keyboard with filters (categories) here
         await callback.message.edit_text(
             text=catalog_text,
-            reply_markup=get_main_catalog_keyboard(workflows)
+            reply_markup=get_main_catalog_keyboard()
         )
     except TelegramBadRequest:
         logging.warning("Tried to edit message with the same content in show_catalog_menu.")

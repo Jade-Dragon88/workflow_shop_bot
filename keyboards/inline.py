@@ -26,13 +26,13 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-def get_main_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
+def get_main_catalog_keyboard() -> InlineKeyboardMarkup:
     """
-    Creates an inline keyboard for the main catalog view, including filter buttons.
+    Creates an inline keyboard for the main catalog view, showing only categories.
     """
     buttons = []
     
-    # Priority filters
+    # Priority filters (Categories)
     buttons.append([
         InlineKeyboardButton(text="❗️ Крайне важные", callback_data="filter_priority:1")
     ])
@@ -41,14 +41,9 @@ def get_main_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup
         InlineKeyboardButton(text="ℹ️ Общая информация", callback_data="filter_priority:3"),
     ])
     buttons.append([
-        InlineKeyboardButton(text="Все Workflows", callback_data="filter_priority:all")
+        InlineKeyboardButton(text="🗂️ Все Workflows", callback_data="filter_priority:all")
     ])
 
-    for wf in workflows:
-        button_text = f"{wf.name} - {wf.price:.0f}₽"
-        callback_data = f"workflow:{wf.slug}"
-        buttons.append([InlineKeyboardButton(text=button_text, callback_data=callback_data)])
-    
     buttons.append([
         InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu")
     ])
