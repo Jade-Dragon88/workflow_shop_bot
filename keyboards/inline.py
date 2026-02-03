@@ -31,6 +31,17 @@ def get_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
     Creates an inline keyboard with a list of workflows.
     """
     buttons = []
+    
+    # Priority filters
+    buttons.append([
+        InlineKeyboardButton(text="⭐️ Priority 1", callback_data="filter_priority:1"),
+        InlineKeyboardButton(text="✨ Priority 2", callback_data="filter_priority:2"),
+        InlineKeyboardButton(text="⚡️ Priority 3", callback_data="filter_priority:3"),
+    ])
+    buttons.append([
+        InlineKeyboardButton(text="Все Workflows", callback_data="filter_priority:all")
+    ])
+
     for wf in workflows:
         # Each workflow gets its own button
         button_text = f"{wf.name} - {wf.price:.0f}₽"

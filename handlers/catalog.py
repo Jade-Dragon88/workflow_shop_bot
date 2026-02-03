@@ -4,7 +4,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 
 from database.supabase_http_client import supabase_http_client
 from database.models import Workflow
-from keyboards.inline import get_catalog_keyboard, get_workflow_card_keyboard # Import new keyboard
+from keyboards.inline import get_catalog_keyboard, get_workflow_card_keyboard
 
 router = Router()
 
@@ -40,17 +40,21 @@ async def get_workflow_by_slug(slug: str) -> Workflow | None:
         return None
 
 @router.callback_query(F.data == "catalog_menu")
-async def show_catalog_menu(callback: CallbackQuery, **kwargs):
+async def show_catalog_menu(callback: CallbackQuery, priority: int = None):
     """
     Handles the 'catalog_menu' callback, showing the list of workflows.
+    Can optionally show filtered workflows based on priority.
     """
     await callback.answer()
     
-    workflows = await get_workflows_from_db()
+    workflows = await get_workflows_from_db(priority)
     
     if not workflows:
+        text = "Каталог пока пуст. Скоро здесь появятся новые workflows!"
+        if priority:
+            text = f"Workflows с приоритетом {priority} пока нет."
         await callback.message.edit_text(
-            "Каталог пока пуст. Скоро здесь появятся новые workflows!",
+            text,
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu")]
             ])
@@ -58,6 +62,44 @@ async def show_catalog_menu(callback: CallbackQuery, **kwargs):
         return
 
     catalog_text = "🗂️ **Каталог Workflows**\n\nВыберите интересующий вас workflow:"
+    
+    await callback.message.edit_text(
+        text=catalog_text,
+        reply_markup=get_catalog_keyboard(workflows)
+    )
+
+@router.callback_query(F.data.startswith("filter_priority:"))
+async def filter_workflows_by_priority(callback: CallbackQuery):
+    """
+    Handles filtering workflows by priority.
+    """
+    await callback.answer()
+    filter_value = callback.data.split(":")[1]
+    
+    priority_filter = None
+    if filter_value != "all":
+        try:
+            priority_filter = int(filter_value)
+        except ValueError:
+            logging.error(f"Invalid priority filter value: {filter_value}")
+            # Fallback to showing all if filter is invalid
+            pass
+
+    workflows = await get_workflows_from_db(priority_filter)
+    
+    if not workflows:
+        text = "К сожалению, workflows по выбранному фильтру не найдены."
+        await callback.message.edit_text(
+            text,
+            reply_markup=get_catalog_keyboard(workflows=[]) # Pass empty list to ensure only nav buttons
+        )
+        return
+
+    catalog_text = "🗂️ **Каталог Workflows**\n\n"
+    if priority_filter:
+        catalog_text += f"Показаны workflows с приоритетом {priority_filter}:\n\n"
+    else:
+        catalog_text += "Все доступные workflows:\n\n"
     
     await callback.message.edit_text(
         text=catalog_text,
