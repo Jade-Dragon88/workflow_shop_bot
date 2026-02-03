@@ -26,9 +26,9 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-def get_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
+def get_main_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
     """
-    Creates an inline keyboard with a list of workflows.
+    Creates an inline keyboard for the main catalog view, including filter buttons.
     """
     buttons = []
     
@@ -45,16 +45,31 @@ def get_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
     ])
 
     for wf in workflows:
-        # Each workflow gets its own button
         button_text = f"{wf.name} - {wf.price:.0f}₽"
         callback_data = f"workflow:{wf.slug}"
         buttons.append([InlineKeyboardButton(text=button_text, callback_data=callback_data)])
     
-    # Add navigation buttons
     buttons.append([
         InlineKeyboardButton(text="⬅️ Назад", callback_data="main_menu")
     ])
     
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_filtered_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
+    """
+    Creates an inline keyboard for a filtered catalog view, without filter buttons.
+    """
+    buttons = []
+    for wf in workflows:
+        button_text = f"{wf.name} - {wf.price:.0f}₽"
+        callback_data = f"workflow:{wf.slug}"
+        buttons.append([InlineKeyboardButton(text=button_text, callback_data=callback_data)])
+
+    # The "Back" button should now lead to the main catalog view
+    buttons.append([
+        InlineKeyboardButton(text="⬅️ Назад в каталог", callback_data="catalog_menu")
+    ])
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def get_workflow_card_keyboard(slug: str, price: float) -> InlineKeyboardMarkup:
