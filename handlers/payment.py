@@ -1,6 +1,6 @@
 import logging
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
+from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import YUKASSA_TOKEN
 from handlers.catalog import get_workflow_by_slug
@@ -123,5 +123,8 @@ async def handle_successful_payment(message: Message):
     # 2. Send the watermarked file to the user
     
     await message.answer(
-        "🎉 Спасибо за покупку! Ваш workflow уже в пути. Сейчас я его подготовлю и отправлю."
+        "🎉 Спасибо за покупку! Ваш workflow уже в пути. Сейчас я его подготовлю и отправлю.",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🏠 На главную", callback_data="main_menu")]
+        ])
     )
