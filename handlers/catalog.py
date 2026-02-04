@@ -7,6 +7,7 @@ from database.supabase_http_client import supabase_http_client
 from database.models import Workflow
 # Import both keyboard functions
 from keyboards.inline import get_main_catalog_keyboard, get_filtered_catalog_keyboard, get_workflow_card_keyboard
+from utils.pricing import get_current_price
 
 router = Router()
 
@@ -74,7 +75,8 @@ async def filter_workflows_by_priority(callback: CallbackQuery):
             pass
 
     workflows = await get_workflows_from_db(priority_filter)
-    
+    current_price = await get_current_price()
+
     catalog_text = ""
     if priority_filter == 1:
         catalog_text = "❗️ **Крайне важные**\n\n"
@@ -91,10 +93,9 @@ async def filter_workflows_by_priority(callback: CallbackQuery):
         catalog_text += "Выберите интересующий вас workflow:"
 
     try:
-        # Use the keyboard WITHOUT filters here
         await callback.message.edit_text(
             text=catalog_text,
-            reply_markup=get_filtered_catalog_keyboard(workflows)
+            reply_markup=get_filtered_catalog_keyboard(workflows, current_price)
         )
     except TelegramBadRequest:
         logging.warning("Tried to edit message with the same content in filter_workflows_by_priority.")
@@ -110,21 +111,22 @@ async def show_workflow_card(callback: CallbackQuery):
     workflow = await get_workflow_by_slug(slug)
     
     if not workflow:
-        # Simplified error message handling
         await callback.answer("😔 К сожалению, этот workflow не найден.", show_alert=True)
         return
+
+    current_price = await get_current_price()
         
     card_text = (
         f"📄 **{workflow.name}**\n\n"
         f"<b>Описание:</b> {workflow.description}\n\n"
         f"<b>Версия:</b> {workflow.version}\n"
-        f"<b>Цена:</b> {workflow.price:.0f}₽"
+        f"<b>Цена:</b> {current_price:.0f}₽"
     )
     
     try:
         await callback.message.edit_text(
             text=card_text,
-            reply_markup=get_workflow_card_keyboard(slug, workflow.price)
+            reply_markup=get_workflow_card_keyboard(slug, current_price)
         )
     except TelegramBadRequest:
         logging.warning("Tried to edit message with the same content in show_workflow_card.")

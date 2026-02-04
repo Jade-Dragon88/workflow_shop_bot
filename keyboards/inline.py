@@ -52,13 +52,14 @@ def get_main_catalog_keyboard() -> InlineKeyboardMarkup:
     
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def get_filtered_catalog_keyboard(workflows: List[Workflow]) -> InlineKeyboardMarkup:
+def get_filtered_catalog_keyboard(workflows: List[Workflow], price: int) -> InlineKeyboardMarkup:
     """
-    Creates an inline keyboard for a filtered catalog view, without filter buttons.
+    Creates an inline keyboard for a filtered catalog view, showing a consistent price.
     """
     buttons = []
     for wf in workflows:
-        button_text = f"{wf.name} - {wf.price:.0f}₽"
+        # Use the single dynamic price for all items in this view
+        button_text = f"{wf.name} - {price:.0f}₽"
         callback_data = f"workflow:{wf.slug}"
         buttons.append([InlineKeyboardButton(text=button_text, callback_data=callback_data)])
 
