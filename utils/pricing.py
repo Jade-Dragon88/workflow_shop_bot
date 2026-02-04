@@ -22,7 +22,7 @@ async def get_current_price() -> int:
             elif setting['key'] == 'early_bird_limit':
                 limit = int(setting['value'])
         
-        if counter < limit:
+        if counter <= limit:
             return PRICE_EARLY_BIRD
         else:
             return PRICE_REGULAR

@@ -74,5 +74,30 @@ class SupabaseHttpClient:
             logging.error(f"Unexpected error during INSERT on '{table}': {e}", exc_info=True)
             return None
 
+    async def rpc(self, function_name: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        """
+        Calls a PostgreSQL function (RPC).
+        """
+        headers = self._base_headers.copy()
+        headers["Content-Type"] = "application/json"
+        
+        try:
+            response = await self._client.post(
+                f"{self._url}/rpc/{function_name}",
+                json=params,
+                headers=headers
+            )
+            response.raise_for_status()
+            # RPC can return an empty body on success, so we check for it
+            if response.status_code == 204 or not response.content:
+                return None
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logging.error(f"HTTP error during RPC call to '{function_name}': {e.response.status_code} - {e.response.text}")
+            return None
+        except Exception as e:
+            logging.error(f"Unexpected error during RPC call to '{function_name}': {e}", exc_info=True)
+            return None
+
 # Initialize the HTTP client instance for global use
 supabase_http_client = SupabaseHttpClient(url=SUPABASE_URL, key=SUPABASE_KEY, schema=SCHEMA_NAME)

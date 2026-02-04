@@ -5,6 +5,7 @@ from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from config import YUKASSA_TOKEN
 from handlers.catalog import get_workflow_by_slug
 from database.supabase_http_client import supabase_http_client
+from utils.pricing import get_current_price, PRICE_EARLY_BIRD
 
 router = Router()
 
@@ -25,10 +26,8 @@ async def handle_buy_workflow(callback: CallbackQuery, bot: Bot):
         await callback.answer("😔 Товар не найден. Возможно, он был удален.", show_alert=True)
         return
 
-    # --- TODO: Early Bird Logic ---
-    # We will add logic here later to check the number of sales
-    # and potentially adjust the price. For now, we use the DB price.
-    price = workflow.price
+    # Get the current dynamic price
+    price = await get_current_price()
     
     await bot.send_invoice(
         chat_id=user_id,
@@ -106,6 +105,12 @@ async def handle_successful_payment(message: Message):
         
         await supabase_http_client.insert(table="purchases", data=purchase_data)
         logging.info(f"Purchase by user {user_id} for workflow {workflow.id} saved to DB.")
+
+        # Increment Early Bird counter using the RPC function
+        # We only increment if the price paid was the Early Bird price
+        if (payment_info.total_amount / 100) == PRICE_EARLY_BIRD:
+            await supabase_http_client.rpc('increment_setting_value', params={'setting_key': 'early_bird_counter', 'increment_value': 1})
+            logging.info("Incremented early_bird_counter.")
 
     except Exception as e:
         logging.error(f"Failed to save purchase to DB for user {message.from_user.id}: {e}", exc_info=True)
