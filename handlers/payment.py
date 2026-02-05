@@ -1,11 +1,15 @@
 import logging
+import os
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
+from utils.watermark import add_watermark_to_workflow
 
 from config import YUKASSA_TOKEN
 from handlers.catalog import get_workflow_by_slug
 from database.supabase_http_client import supabase_http_client
 from utils.pricing import get_current_price, PRICE_EARLY_BIRD
+from utils.watermark import add_watermark_to_workflow # Import watermarking function
+from aiogram.types import FSInputFile # Import for sending files
 
 router = Router()
 
@@ -67,63 +71,79 @@ async def handle_pre_checkout_query(pre_checkout_query: PreCheckoutQuery, bot: B
     await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
     logging.info(f"Pre-checkout query approved for user {pre_checkout_query.from_user.id}")
 
+import os
+
+# ... (other imports) ...
+
 @router.message(F.successful_payment)
-async def handle_successful_payment(message: Message):
+async def handle_successful_payment(message: Message, bot: Bot):
     """
-    Handles a successful payment.
-    Logs the purchase in the database and prepares for product delivery.
+    Handles a successful payment, saves the purchase, creates a watermark, and delivers the product.
     """
     payment_info = message.successful_payment
     payload_str = payment_info.invoice_payload
-    
-    logging.info(
-        f"SUCCESSFUL PAYMENT: User {message.from_user.id} paid {payment_info.total_amount / 100} {payment_info.currency} "
-        f"for payload: {payload_str}"
-    )
+    user_id = message.from_user.id
+    username = message.from_user.username or "user"
 
-    # --- Save purchase to DB ---
+    logging.info(f"SUCCESSFUL PAYMENT from user {user_id} for payload: {payload_str}")
+
     try:
-        # Extract data from payload: "workflow_purchase:{slug}:{user_id}"
-        _, slug, user_id_str = payload_str.split(":")
-        user_id = int(user_id_str)
+        _, slug, _ = payload_str.split(":")
         
-        # Get workflow_id from slug
         workflow = await get_workflow_by_slug(slug)
         if not workflow:
-            logging.error(f"FATAL: Workflow with slug '{slug}' not found after successful payment!")
-            await message.answer("Произошла критическая ошибка. Пожалуйста, свяжитесь с поддержкой.")
+            logging.error(f"FATAL: Workflow '{slug}' not found after successful payment!")
+            await message.answer("Произошла критическая ошибка. Свяжитесь с поддержкой.")
             return
 
+        # Save purchase to DB
         purchase_data = {
-            "user_id": user_id,
-            "workflow_id": workflow.id,
+            "user_id": user_id, "workflow_id": workflow.id,
             "price": payment_info.total_amount / 100,
-            "payment_id": payment_info.telegram_payment_charge_id, # Encrypt this later
+            "payment_id": payment_info.telegram_payment_charge_id,
             "email": payment_info.order_info.email if payment_info.order_info else None,
-            "ip_address": None, # Cannot get IP from Telegram Payments
         }
-        
         await supabase_http_client.insert(table="purchases", data=purchase_data)
         logging.info(f"Purchase by user {user_id} for workflow {workflow.id} saved to DB.")
 
-        # Increment Early Bird counter using the RPC function
-        # We only increment if the price paid was the Early Bird price
+        # Increment Early Bird counter if applicable
         if (payment_info.total_amount / 100) == PRICE_EARLY_BIRD:
             await supabase_http_client.rpc('increment_setting_value', params={'setting_key': 'early_bird_counter', 'increment_value': 1})
             logging.info("Incremented early_bird_counter.")
 
-    except Exception as e:
-        logging.error(f"Failed to save purchase to DB for user {message.from_user.id}: {e}", exc_info=True)
-        # Even if DB save fails, we should try to deliver the product
-        await message.answer("Произошла ошибка при сохранении вашей покупки, но не волнуйтесь! "
-                             "Мы уже работаем над этим. Ваш workflow скоро будет доставлен.")
+        # --- Deliver the product ---
+        await message.answer("🎉 Спасибо за покупку! Готовлю ваш персональный файл...")
 
-    # --- TODO: Deliver the product ---
-    # 1. Add watermark to the file
-    # 2. Send the watermarked file to the user
-    
+        watermarked_file = add_watermark_to_workflow(
+            original_filepath=workflow.filepath, slug=workflow.slug,
+            user_id=user_id, username=username,
+            payment_id=payment_info.telegram_payment_charge_id,
+            workflow_version=workflow.version
+        )
+
+        if watermarked_file:
+            try:
+                await bot.send_document(
+                    chat_id=user_id,
+                    document=FSInputFile(watermarked_file),
+                    caption="✅ Ваш workflow готов! Спасибо за использование нашего сервиса."
+                )
+                logging.info(f"Successfully sent watermarked file to user {user_id}")
+            finally:
+                # Cleanup the temporary watermarked file
+                os.remove(watermarked_file)
+                logging.info(f"Removed temporary file: {watermarked_file}")
+        else:
+            raise Exception("Watermarked file creation failed.")
+
+    except Exception as e:
+        logging.error(f"Failed to process successful payment for user {user_id}: {e}", exc_info=True)
+        await message.answer("😔 Произошла ошибка при обработке вашей покупки. Пожалуйста, свяжитесь с поддержкой, и мы все решим.")
+        return
+
+    # Final confirmation message with a button
     await message.answer(
-        "🎉 Спасибо за покупку! Ваш workflow уже в пути. Сейчас я его подготовлю и отправлю.",
+        "Все готово! Если у вас возникнут вопросы, обращайтесь в поддержку.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🏠 На главную", callback_data="main_menu")]
         ])
