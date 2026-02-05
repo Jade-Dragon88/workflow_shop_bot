@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 from datetime import datetime
+from zoneinfo import ZoneInfo # For timezone-aware timestamps
 import logging
 
 from config import WATERMARKED_DIR
@@ -42,9 +43,10 @@ def add_watermark_to_workflow(
             "version": workflow_version,
         }
 
-        # 2. Create a unique filename and save the watermarked file
-        timestamp = int(datetime.now().timestamp())
-        watermarked_filename = f"watermarked_test_{user_id}_{slug}_{timestamp}.json" # Added prefix for clarity
+        # 2. Create a unique, human-readable filename and save the watermarked file
+        now_msk = datetime.now(ZoneInfo("Europe/Moscow"))
+        time_str = now_msk.strftime("%Y-%m-%d_%H-%M-%S")
+        watermarked_filename = f"{user_id}_{slug}_{time_str}.json"
         watermarked_filepath = os.path.join(WATERMARKED_DIR, watermarked_filename)
 
         # Ensure the watermarked directory exists

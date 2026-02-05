@@ -145,6 +145,9 @@ async def handle_successful_payment(message: Message, bot: Bot):
     await message.answer(
         "Все готово! Если у вас возникнут вопросы, обращайтесь в поддержку.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🏠 На главную", callback_data="main_menu")]
+            [
+                InlineKeyboardButton(text="🏠 На главную", callback_data="main_menu"),
+                InlineKeyboardButton(text="💬 Поддержка", callback_data="support_menu")
+            ]
         ])
     )
