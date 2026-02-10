@@ -13,6 +13,9 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Payments
 YUKASSA_TOKEN = os.getenv("YUKASSA_TOKEN")
 
+# Encryption
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+
 # Admins
 ADMIN_IDS = list(map(int, os.getenv("ADMIN_IDS", "").split(','))) if os.getenv("ADMIN_IDS") else []
 

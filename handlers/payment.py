@@ -9,7 +9,8 @@ from config import YUKASSA_TOKEN, PRIVATE_CHANNEL_ID
 from handlers.catalog import get_workflow_by_slug
 from database.supabase_http_client import supabase_http_client
 from utils.pricing import get_current_price, PRICE_EARLY_BIRD
-from utils.watermark import add_watermark_to_workflow # Import watermarking function
+from utils.watermark import add_watermark_to_workflow
+from utils.encryption import encryptor # Import the encryptor # Import watermarking function
 from aiogram.types import FSInputFile # Import for sending files
 
 router = Router()
@@ -101,7 +102,7 @@ async def handle_successful_payment(message: Message, bot: Bot):
         purchase_data = {
             "user_id": user_id, "workflow_id": workflow.id,
             "price": payment_info.total_amount / 100,
-            "payment_id": payment_info.telegram_payment_charge_id,
+            "payment_id": encryptor.encrypt(payment_info.telegram_payment_charge_id),
             "email": payment_info.order_info.email if payment_info.order_info else None,
         }
         await supabase_http_client.insert(table="purchases", data=purchase_data)
