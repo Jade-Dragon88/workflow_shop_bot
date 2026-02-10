@@ -1,10 +1,11 @@
 import logging
 import os
+from datetime import datetime, timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 from utils.watermark import add_watermark_to_workflow
 
-from config import YUKASSA_TOKEN
+from config import YUKASSA_TOKEN, PRIVATE_CHANNEL_ID
 from handlers.catalog import get_workflow_by_slug
 from database.supabase_http_client import supabase_http_client
 from utils.pricing import get_current_price, PRICE_EARLY_BIRD
@@ -135,6 +136,27 @@ async def handle_successful_payment(message: Message, bot: Bot):
                 logging.info(f"Removed temporary file: {watermarked_file}")
         else:
             raise Exception("Watermarked file creation failed.")
+
+        # --- Send Invite Link ---
+        try:
+            if PRIVATE_CHANNEL_ID:
+                expire_date = datetime.now() + timedelta(days=1)
+                invite_link = await bot.create_chat_invite_link(
+                    chat_id=PRIVATE_CHANNEL_ID,
+                    expire_date=expire_date,
+                    member_limit=1
+                )
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=f"🎁 В качестве бонуса, вот ваше персональное приглашение в наш приватный канал. Ссылка действует 24 часа:\n{invite_link.invite_link}"
+                )
+                logging.info(f"Sent invite link to user {user_id}")
+            else:
+                logging.warning("PRIVATE_CHANNEL_ID is not set. Skipping invite link generation.")
+        except Exception as e:
+            logging.error(f"Failed to create or send invite link for user {user_id}: {e}")
+            # Do not block the user, just inform them
+            await bot.send_message(user_id, "Не удалось создать пригласительную ссылку в приватный канал. Если проблема повторится, пожалуйста, обратитесь в поддержку.")
 
     except Exception as e:
         logging.error(f"Failed to process successful payment for user {user_id}: {e}", exc_info=True)
