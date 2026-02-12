@@ -1,7 +1,7 @@
 import logging
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from config import ADMIN_IDS
 
@@ -11,12 +11,12 @@ router = Router()
 # We combine the Command filter with a "magic" filter F.
 IS_ADMIN = F.from_user.id.in_(ADMIN_IDS)
 
-@router.message(Command("admin"), IS_ADMIN)
-async def cmd_admin_panel(message: Message):
+@router.callback_query(F.data == "admin_panel", IS_ADMIN)
+async def cmd_admin_panel(callback: CallbackQuery):
     """
-    Handles the /admin command, showing the main admin panel.
+    Handles the "admin_panel" button, showing the main admin panel.
     """
-    logging.info(f"Admin user {message.from_user.id} accessed the admin panel.")
+    logging.info(f"Admin user {callback.from_user.id} accessed the admin panel via button.")
     
     admin_text = (
         "<b>Панель администратора</b>\n\n"
@@ -25,12 +25,13 @@ async def cmd_admin_panel(message: Message):
         "/ban [user_id] [причина] - Забанить пользователя\n"
         "/unban [user_id] - Разбанить пользователя\n"
     )
-    await message.answer(admin_text)
+    # Answer the callback to remove the "loading" state on the button
+    await callback.answer()
+    # Send a new message with the admin panel
+    await callback.message.answer(admin_text)
 
 # This handler will catch attempts by non-admins to use admin commands.
-# It should be registered for specific admin commands.
-# The `~IS_ADMIN` part means "user is NOT an admin".
-@router.message(Command("admin", "stats", "ban", "unban"), ~IS_ADMIN)
+@router.message(Command("stats", "ban", "unban"), ~IS_ADMIN)
 async def cmd_access_denied(message: Message):
     """
     Handles attempts by non-admins to use admin commands.

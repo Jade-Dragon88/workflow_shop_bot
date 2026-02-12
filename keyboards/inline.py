@@ -8,9 +8,10 @@ class Workflow:
     name: str
     price: float
 
-def get_main_menu_keyboard() -> InlineKeyboardMarkup:
+def get_main_menu_keyboard(is_admin: bool = False) -> InlineKeyboardMarkup:
     """
     Возвращает inline-клавиатуру для главного меню.
+    Adds an admin button if the user is an admin.
     """
     keyboard = [
         [
@@ -24,6 +25,12 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="🗂️ Каталог", callback_data="catalog_menu")
         ]
     ]
+
+    if is_admin:
+        keyboard.append([
+            InlineKeyboardButton(text="⚙️ Админка", callback_data="admin_panel")
+        ])
+
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 def get_main_catalog_keyboard() -> InlineKeyboardMarkup:
