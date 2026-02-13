@@ -86,3 +86,17 @@ def get_workflow_card_keyboard(slug: str, price: float) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="⬅️ Назад в каталог", callback_data="catalog_menu")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def get_admin_panel_keyboard() -> InlineKeyboardMarkup:
+    """
+    Creates the keyboard for the main admin panel.
+    Uses text to indicate the danger level of buttons.
+    """
+    buttons = [
+        [InlineKeyboardButton(text="🔄 Отправить файл", callback_data="admin:send_file")],
+        [InlineKeyboardButton(text="💰 Изменить цену", callback_data="admin:change_price")],
+        [InlineKeyboardButton(text="🚫 Забанить (Опасно)", callback_data="admin:ban_user")],
+        [InlineKeyboardButton(text="⬅️ Назад в главное меню", callback_data="main_menu")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+

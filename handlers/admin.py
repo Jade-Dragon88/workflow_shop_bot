@@ -2,6 +2,7 @@ import logging
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
+from keyboards.inline import get_admin_panel_keyboard # Import the new keyboard
 
 from config import ADMIN_IDS
 
@@ -14,21 +15,18 @@ IS_ADMIN = F.from_user.id.in_(ADMIN_IDS)
 @router.callback_query(F.data == "admin_panel", IS_ADMIN)
 async def cmd_admin_panel(callback: CallbackQuery):
     """
-    Handles the "admin_panel" button, showing the main admin panel.
+    Handles the "admin_panel" button, showing the main admin menu.
     """
     logging.info(f"Admin user {callback.from_user.id} accessed the admin panel via button.")
     
-    admin_text = (
-        "<b>Панель администратора</b>\n\n"
-        "Добро пожаловать! Выберите одну из доступных команд:\n"
-        "/stats - Показать статистику\n"
-        "/ban [user_id] [причина] - Забанить пользователя\n"
-        "/unban [user_id] - Разбанить пользователя\n"
+    admin_text = "<b>Панель администратора</b>"
+    
+    # Edit the current message to show the admin panel
+    await callback.message.edit_text(
+        admin_text,
+        reply_markup=get_admin_panel_keyboard()
     )
-    # Answer the callback to remove the "loading" state on the button
     await callback.answer()
-    # Send a new message with the admin panel
-    await callback.message.answer(admin_text)
 
 # This handler will catch attempts by non-admins to use admin commands.
 @router.message(Command("stats", "ban", "unban"), ~IS_ADMIN)
