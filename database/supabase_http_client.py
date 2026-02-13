@@ -88,7 +88,6 @@ class SupabaseHttpClient:
                 headers=headers
             )
             response.raise_for_status()
-            # RPC can return an empty body on success, so we check for it
             if response.status_code == 204 or not response.content:
                 return None
             return response.json()
@@ -97,6 +96,34 @@ class SupabaseHttpClient:
             return None
         except Exception as e:
             logging.error(f"Unexpected error during RPC call to '{function_name}': {e}", exc_info=True)
+            return None
+
+    async def update(self, table: str, match: Dict[str, Any], new_data: Dict[str, Any]) -> Any:
+        """
+        Performs an UPDATE operation on a table.
+        """
+        headers = self._base_headers.copy()
+        headers["Content-Profile"] = self._schema
+        headers["Content-Type"] = "application/json"
+        
+        query_params = {key: f"eq.{value}" for key, value in match.items()}
+        
+        try:
+            response = await self._client.patch(
+                f"{self._url}/{table}",
+                params=query_params,
+                json=new_data,
+                headers=headers
+            )
+            response.raise_for_status()
+            if response.status_code == 204:
+                return True
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logging.error(f"HTTP error during UPDATE on '{table}': {e.response.status_code} - {e.response.text}")
+            return None
+        except Exception as e:
+            logging.error(f"Unexpected error during UPDATE on '{table}': {e}", exc_info=True)
             return None
 
 # Initialize the HTTP client instance for global use
