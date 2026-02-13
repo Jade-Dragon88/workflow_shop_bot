@@ -2,6 +2,7 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN, LOGS_DIR
 from handlers import start as start_handler, catalog as catalog_handler, payment as payment_handler, admin as admin_handler
@@ -17,8 +18,8 @@ async def main():
     # Initialize the bot with the token and default parse mode
     bot = Bot(token=BOT_TOKEN, default_parse_mode=ParseMode.HTML)
     
-    # Initialize the dispatcher
-    dp = Dispatcher()
+    # Initialize the dispatcher with memory storage for FSM
+    dp = Dispatcher(storage=MemoryStorage())
 
     # --- Register Middlewares ---
     # The order is important. We check for ban first, then for rate limiting.
