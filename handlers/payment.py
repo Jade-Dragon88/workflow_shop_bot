@@ -155,9 +155,8 @@ async def handle_successful_payment(message: Message, bot: Bot):
             else:
                 logging.warning("PRIVATE_CHANNEL_ID is not set. Skipping invite link generation.")
         except Exception as e:
-            logging.error(f"Failed to create or send invite link for user {user_id}: {e}")
-            # Do not block the user, just inform them
-            await bot.send_message(user_id, "Не удалось создать пригласительную ссылку в приватный канал. Если проблема повторится, пожалуйста, обратитесь в поддержку.")
+            logging.warning(f"Failed to create invite link for user {user_id}: {e}")
+            await bot.send_message(user_id, "🎁 Хотите получить доступ к приватному каналу? Напишите @Nn_Ovchinnikov_Oleg")
 
     except Exception as e:
         logging.error(f"Failed to process successful payment for user {user_id}: {e}", exc_info=True)

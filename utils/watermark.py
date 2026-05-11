@@ -43,7 +43,15 @@ def add_watermark_to_workflow(
             "version": workflow_version,
         }
 
-        # 2. Create a unique, human-readable filename and save the watermarked file
+        # 2. Add watermark to each node's notes
+        for node in workflow_data.get('nodes', []):
+            existing_notes = node.get('notes', '') or ''
+            if existing_notes:
+                node['notes'] = existing_notes + f"\n[Licensed to: @{username}]"
+            else:
+                node['notes'] = f"[Licensed to: @{username}]"
+
+        # 3. Create a unique, human-readable filename and save the watermarked file
         now_msk = datetime.now(ZoneInfo("Europe/Moscow"))
         time_str = now_msk.strftime("%Y-%m-%d_%H-%M-%S")
         watermarked_filename = f"{user_id}_{slug}_{time_str}.json"
